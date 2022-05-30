@@ -20,10 +20,10 @@ contract("Gravity", accounts => {
 
   it("... should create a WL", async ()=>{
     WL = [
-      {"address": accounts[1], "quantity": 2},
-      {"address": accounts[2], "quantity": 2},
-      {"address": accounts[3], "quantity": 4},
-      {"address": accounts[4], "quantity": 50}]
+      {"address": accounts[1]},
+      {"address": accounts[2]},
+      {"address": accounts[3]},
+      {"address": accounts[4]}]
     const contractAddress = await nft.address;
     const tokenId = 1
     const mintOpenedCheck = true;
@@ -57,20 +57,34 @@ contract("Gravity", accounts => {
     assert(await nft.mintBatch(accounts[0], [1], [2], {from: accounts[0]}), 'Could not mint a token');
   })
 
-  // it("... should return the right URI", async () =>{
-  //   assert(await nft.setURI("test"), "Could not update the URI");
-  //   assert.equal(await nft.uri(1), "test1.json", 'Did not return the right URI');
-  //   assert.equal(await nft.uri(2), "test2.json", 'Did not return the right URI');
-  //   assert(await nft.setURI("https://arweave.net/mEGsCrxdcxml8r1N91KkOtzlhsCc_Dloh8WGiYVWzMg/token"), "Could not update the URI");
-  //   for(let i=1;i<=16;i++){
-  //     assert.equal(await nft.uri(i), `https://arweave.net/mEGsCrxdcxml8r1N91KkOtzlhsCc_Dloh8WGiYVWzMg/token${i}.json`, 'Did not return the right URI');
-  //   }
-  // })
+  it("... should add URI", async () =>{
+    assert(await nft.addURI(1, "URI1", {from: accounts[0]}), 'Could not add a token URI');
+    let URIToken1 = await nft.uri(1);
+    assert.equal(URIToken1, "URI1")
+  })
+
+  it("... should add a second URI", async () =>{
+    assert(await nft.addURI(2, "URI2", {from: accounts[0]}), 'Could not add a second token URI');
+    let URIToken2 = await nft.uri(2);
+    assert.equal(URIToken2, "URI2")
+  })
+
+  it("... should edit a URI", async () =>{
+    assert(await nft.editURI(1, "newURI1", {from: accounts[0]}), 'Could not edit token URI');
+    let URIToken1 = await nft.uri(1);
+    assert.equal(URIToken1, "newURI1")
+  })
+
+  it("... should edit a second URI", async () =>{
+    assert(await nft.editURI(2, "newURI2", {from: accounts[0]}), 'Could not edit a second token URI');
+    let URIToken2 = await nft.uri(2);
+    assert.equal(URIToken2, "newURI2")
+  })
 
   if("... should not mint when not on the WL", async () => {
     let minter = accounts[7];
     assert(await ash.approve(await nft.address, (amountToApprove).toString(), {from: minter}),"Could not approve ASH");
-    await assert.rejects(nft.publicMint( 1, null, null, null, {from: minter}), 'Successfully minted with a closed Drop');
+    await assert.rejects(nft.publicMint(1, null, null, null, {from: minter}), 'Successfully minted with a closed Drop');
   });
 
   it("... should add Admins", async () =>{
@@ -93,7 +107,8 @@ contract("Gravity", accounts => {
     await assert.rejects(nft.setRoyalties(accounts[1], 100, {from: accounts[1]}), 'could edit royalties but was not admin')
   })
 
-  it("should allow publicMint for AL addresses ", async () =>{
+  it("... should allow publicMint for AL addresses ", async () =>{
+    assert(await nft.toggleMintState())
     let minter = accounts[2];
     let signature = AL[minter]
     assert(await ash.approve(await nft.address, (amountToApprove).toString(), {from: minter}),"Could not approve ASH");
