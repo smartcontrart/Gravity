@@ -18,6 +18,8 @@ contract Gravity is ERC1155, AdminControl {
 
     uint256 public _ashPrice = 100*10**18; //100 A
     uint256 private _royaltyAmount; //in % 
+    uint256 public _maxSupply = 100;
+    uint256 public _supply = 0;
 
     address public _ashContract = 0x4392329a8565E81E3C041034feAC84616fe9A722;
     // address public _ashContract = 0x64D91f12Ece7362F91A6f8E7940Cd55F05060b92;
@@ -46,7 +48,7 @@ contract Gravity is ERC1155, AdminControl {
         super.supportsInterface(interfaceId);
     }
 
-    function mintAllowed(uint8 v, bytes32 r, bytes32 s)internal view returns(bool){
+    function mintAllowed(uint256 tokenId, uint8 v, bytes32 r, bytes32 s)internal view returns(bool){
         return(
             _signer ==
                 ecrecover(
@@ -57,8 +59,10 @@ contract Gravity is ERC1155, AdminControl {
                                 abi.encodePacked(
                                     msg.sender,
                                     address(this),
+                                    tokenId,
                                     _mintOpened,
-                                    !_tokenClaimed[msg.sender]
+                                    _tokenClaimed[msg.sender],
+                                    _supply < _maxSupply
                                 )
                             )
                         )
@@ -66,6 +70,12 @@ contract Gravity is ERC1155, AdminControl {
                 , v, r, s)
         );
     }
+
+    //////////////////TO BE DELETED AT DEPLOY////////////////////////
+    function setAshAddress(address ashAddress) external adminRequired{
+        _ashContract = ashAddress;
+    }
+    /////////////////////////////////////////////////////////////////
 
     function setSigner (address signer) external adminRequired{
         _signer = signer;
@@ -76,16 +86,16 @@ contract Gravity is ERC1155, AdminControl {
     }
 
     function publicMint(
-        address account,
         uint256 tokenId,
         uint8 v,
         bytes32 r, 
         bytes32 s
     ) external {
-        require(mintAllowed( v, r, s), "Mint not allowed");
+        require(mintAllowed(tokenId, v, r, s), "Mint not allowed");
         IERC20(_ashContract).transferFrom(msg.sender, _royalties_recipient, _ashPrice);
-        _mintBatch(account ,tokenId ,1 ,"0x00");
-        _tokenClaimed[account] = true;
+        _mint(msg.sender ,tokenId ,1 ,"0x00");
+        _tokenClaimed[msg.sender] = true;
+        _supply += 1;
     }
 
     function mintBatch(
@@ -100,15 +110,15 @@ contract Gravity is ERC1155, AdminControl {
         _mintOpened = !_mintOpened;
     }
 
-    function setURI(
-        string[] calldata updatedURI
-    ) external adminRequired{
-        delete  _uris;
-        _uris = updatedURI;
+    function setURIs(string [] calldata uris) public adminRequired{
+        delete _uris;
+        for(uint256 i=0; i < uris.length; i++){
+            _uris.push(uris[i]);
+        }
     }
 
     function addURI(
-        string newURI
+        string calldata newURI
     ) external adminRequired{
         _uris.push(newURI);
     }
