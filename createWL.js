@@ -4,7 +4,7 @@ const AL = require("./ContractData/WL/WL.json")
 const ALaddresses = AL.addresses;
 // const URIS = require("./ContractData/URIs/URIs.json")
 // var contract = artifacts.require("Duality");
-var contract_address = process.env.DEV_CONTRACT_ADDRESS;
+var contract_address = process.env.PROD_CONTRACT_ADDRESS;
 const signer = web3.eth.accounts.wallet.add(process.env.DEV_WALLET_1_PRIVKEY);
 console.log(web3)
 

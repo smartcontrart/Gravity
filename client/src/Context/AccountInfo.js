@@ -5,9 +5,9 @@ export const AccountInfoContext = createContext();
 class AccountInfoProvider extends Component {
     state = {
         ashAddress: process.env.REACT_APP_MAINNET_CONTRACT_ADDRESS,
-        dualityAddress: process.env.REACT_APP_MAINNET_CONTRACT_ADDRESS,
+        gravityAddress: process.env.REACT_APP_MAINNET_CONTRACT_ADDRESS,
         ashInstance: null,
-        dualityInstance: null,
+        gravityInstance: null,
         account: null,
         networkId: null,
         transactionInProgress: false,
@@ -18,7 +18,10 @@ class AccountInfoProvider extends Component {
         contractAllowance: 0,
         signedMessage: null,
         ALquantity: 0,
-        tokensClaimed: 0
+        tokenClaimed: false,
+        tokenId: 1,
+        publicSaleActivated: false,
+        ALSaleActivated: false
     }
 
     updateAccountInfo = (updatedData) =>{

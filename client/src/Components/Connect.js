@@ -1,8 +1,8 @@
 import React, { Component } from "react";
 import Web3 from "web3";
-import { Button, Alert } from "react-bootstrap";
+import { Button, Alert, Col } from "react-bootstrap";
 import { AccountInfoContext } from '../Context/AccountInfo'
-import duality  from "../contracts/Duality.json";
+import gravity  from "../contracts/GRAVITY.json";
 import ash  from "../contracts/fakeASH.json";
 import AL from "../AL/signedList.json"
 
@@ -25,16 +25,16 @@ class Connect extends Component {
 
   async getContractsInstances(){
     this.networkId = await this.web3.eth.net.getId();
-    this.deployedNetwork = duality.networks[this.networkId];
-    this.dualityInstance = new this.web3.eth.Contract(
-      duality.abi,
+    this.deployedNetwork = gravity.networks[this.networkId];
+    this.gravityInstance = new this.web3.eth.Contract(
+      gravity.abi,
       parseInt(process.env.REACT_APP_MAINNET_NETWORK) && process.env.REACT_APP_MAINNET_CONTRACT_ADDRESS
     )
     this.ashInstance = new this.web3.eth.Contract(
       ash.abi,
       parseInt(process.env.REACT_APP_MAINNET_NETWORK) && process.env.REACT_APP_MAINNET_ASH_ADDRESS
     )
-    this.context.updateAccountInfo({ashInstance: this.ashInstance, dualityInstance: this.dualityInstance})
+    this.context.updateAccountInfo({ashInstance: this.ashInstance, gravityInstance: this.gravityInstance})
     this.getMintInfo();
   }
 
@@ -66,13 +66,10 @@ class Connect extends Component {
       this.context.updateAccountInfo({walletAshBalance: parseFloat(await this.ashInstance.methods.balanceOf(this.context.account).call())})
       this.context.updateAccountInfo({contractAllowance: parseInt(await this.ashInstance.methods.allowance(this.context.account, process.env.REACT_APP_MAINNET_CONTRACT_ADDRESS).call())})
       let accountALData = await this.findSignedMessage(this.context.account);
-      console.log('HERE')
-      console.log(accountALData)
       if(accountALData){
         this.context.updateAccountInfo({signedMessage: accountALData.signedMessage})
-        this.context.updateAccountInfo({ALquantity: parseInt(accountALData.ALquantity)})
       }
-      this.context.updateAccountInfo({tokensClaimed: parseInt(await this.dualityInstance.methods._tokensClaimed(this.context.account).call())})
+      this.context.updateAccountInfo({tokenClaimed: await this.gravityInstance.methods._tokenClaimed(1, this.context.account).call()})
     }
   }
 
@@ -80,7 +77,7 @@ class Connect extends Component {
     let signedMessage = null
     for(let i=0;i<AL.length;i++){
       let key = Object.keys(AL[i])[0]
-      if(key==account){
+      if(key.toLowerCase()==account.toLowerCase()){
         signedMessage = AL[i][key]
       }
     }
@@ -89,7 +86,10 @@ class Connect extends Component {
 
   async getMintInfo(){
     if(this.context.networkId === parseInt(process.env.REACT_APP_MAINNET_NETWORK) ){
-      this.context.updateAccountInfo({mintPrice: parseFloat(await this.dualityInstance.methods._ashPrice().call())})
+      this.context.updateAccountInfo({mintPrice: parseFloat(await this.gravityInstance.methods._ashPrice().call())})
+      this.context.updateAccountInfo({publicSaleActivated: await this.gravityInstance.methods._publicMintOpened().call()})
+      this.context.updateAccountInfo({ALSaleActivated: await this.gravityInstance.methods._ALMintOpened().call()})
+      this.context.updateAccountInfo({supply: await this.gravityInstance.methods._supply().call()})
     }
   }
 
@@ -106,12 +106,12 @@ class Connect extends Component {
   renderUserInterface(){
     if(this.web3){
       if(!this.context.account){
-        return <Button id="connect_button" variant='dark' onClick={() => this.connectWallet()}>Connect your wallet</Button>
+        return <Col><Button id="connect_button" variant='dark' onClick={() => this.connectWallet()}>Connect your wallet</Button></Col>
       }else if(this.context.networkId !== this.context.contractNetwork){
         return <p>Please connect to the right network</p>
       }else return null
     }else{
-      return <Alert id="web3_alert" variant="dark">No Wallet detected</Alert>
+      return <Col><Alert id="web3_alert" variant="dark">No Wallet detected</Alert></Col>
     }
   }
 
